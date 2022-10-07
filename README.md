@@ -703,52 +703,72 @@ Example:
 
 ## Example Scripts for Specific Use Cases
 
-
-
-Buy 2 products or services on a single transaction:
+Buy 2 products or services on a single transaction: (using pre-approved contracts)
 
 ```
 [
-  ["call","<token 1>","transfer","<amount 1>","<shop 1>","buy","product 1"],
-  ["call","<token 2>","transfer","<amount 2>","<shop 2>","buy","product 2"],
+  ["call","<shop 1>","buy(uint256,uint256)","<product_id 1>","<quantity 1>"],
+  ["call","<shop 2>","buy(uint256,uint256)","<product_id 2>","<quantity 2>"],
 ]
 ```
 
-Acquire token2 via swap and buy a product/service with it:
+Buy 2 products or services on a single transaction: (using transferAndCall)
 
 ```
 [
-  ["call","<token 1>","transfer","<amount 1>","<swap pair>","swap",{"exact_output":"<amount 2>"}],
-  ["call","<token 2>","transfer","<amount 2>","<shop>","buy","product"],
+  ["call","<token 1>","transferAndCall(address,uint256,bytes)","<shop 1>","<amount 1>",buffer1],
+  ["call","<token 2>","transferAndCall(address,uint256,bytes)","<shop 2>","<amount 2>",buffer2],
 ]
 ```
 
-Add liquidity to a swap pair:
+Buy 2 products or services on a single transaction: (using tranfer)
 
 ```
 [
-  ["call","<token 1>","transfer","<amount 1>","<swap_pair>","store_token"],
-  ["call","<token 2>","transfer","<amount 2>","<swap_pair>","add_liquidity"],
+  ["call","<token 1>","transfer(address,uint256)","<shop 1>","<amount 1>"],
+  ["call","<shop 1>","buy(uint256,uint256)","<product_id 1>","<quantity 1>"],
+  ["call","<token 2>","transfer(address,uint256)","<shop 2>","<amount 2>"],
+  ["call","<shop 2>","buy(uint256,uint256)","<product_id 2>","<quantity 2>"],
 ]
 ```
 
-
-
-Here is an example script that would be used to check the returned amount of tokens on a token swap:
+Acquire token B via swap and buy a product/service with it:
 
 ```
-["call","<tokenB>","balanceOf()"],                       <-- get the previous balance of token B
+[
+  ["call","<swap_pair>","swap(...)",...],
+  ["call","<shop>","buy(uint256,uint256)","<product_id>","<quantity>"],
+]
+```
+
+### Trustless Swap
+
+These are swaps in which the user does not need to trust the swap contract
+
+If the contract does not transfer the desired tokens, the transaction is reverted
+
+It can allow for direct token swaps between users A and B, in a complete trustless way
+
+The "swap contract" can also be a contract wallet (peer-to-peer), a limit order swap contract, etc.
+
+Here is a trustless swap of **fungible tokens**:
+
+```
+["call","<tokenB>","balanceOf(address)","%me%"],         <-- get the previous balance of token B
 ["store","balance_before"],                              <-- store it in a variable
-["call","<tokenA>","transfer","<to>","<amount>","swap"], <-- swap token A for token B
-["call","<tokenB>","balanceOf()"],                       <-- get the new balance of token B
+["call","<tokenA>","transfer(address,uint256)","<to>","<amount>"], <-- swap token A for token B
+["call","<tokenB>","balanceOf(address)","%me%"],         <-- get the new balance of token B
 ["sub","%last_result%","%balance_before%"],              <-- subtract one balance by the other
 ["assert","%last_result%",">=","<minimum_amount>"]       <-- assert that we got the minimum amount
 ```
 
-This feature allows real **TRUSTLESS TRANSACTIONS**, where the user does not trust even the swap contract!
+Here is a trustless swap sending fungible tokens for a **non-fungible token** (buy NFT):
 
-It can allow for direct token swaps between users A and B, in a complete trustless way
-
+```
+["call","<marketplace>","buy(uint256)","<token_id>"],    <-- request the swap, pre-approved
+["call","<nft>","ownerOf(uint256)","<token_id>"],        <-- get the owner of the non-fungible token
+["assert","%last_result%","=","%me%"]                    <-- assert that it was transferred
+```
 
 
 ## Human-readable display of amounts
