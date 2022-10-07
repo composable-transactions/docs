@@ -1,4 +1,4 @@
-# Composable Transactions
+<p align="center"><img src="images/logo.png" width="50%"></p>
 
 Normal transactions can make only a single call to a smart contract.
 
@@ -795,14 +795,13 @@ Optionally, we can use another variable to store the contract address as is used
 
 
 
-
-## Display on hardware wallets / Other wallet integrations
+## Display on hardware wallets
 
 Hardware wallets have no connection to the internet
 
 Currently calls to contracts in normal transactions are displayed on these devices as "blind signing"
 
-![blind signing](img here)
+![blind signing](images/ledger-blind-signing.png)
 
 It is dangerous to sign a transaction without seeing its contents! Many people lost funds doing it.
 
@@ -810,7 +809,7 @@ Composable Transactions
 can be reviewed on these devices (as well as on other off-line and on-line wallets)
 so the user can reject them if the content in unexpected.
 
-By default, each operation from a script is displayed [on the wallet/device] in sequence, with its parameters.
+By default, each operation from a script is displayed on the device in sequential order, with its parameters.
 
 And each call is displayed with the function signature and arguments, making clear what is being called on the contract.
 
