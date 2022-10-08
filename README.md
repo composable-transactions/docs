@@ -149,7 +149,7 @@ Example:
 
 ```javascript
 [
-  ["call","0xb015a47f8e5511076c9d0372bf190ac","transferAndCall","0x...","12500000","swap"],
+  ["call","0x6b175474e89094c44da98b954eedeac495271d0f","transferAndCall","0x...","12500000"],
   ["balance"],
   ["assert","%last_result%",">=","25000000000000000"]
 ]
@@ -773,46 +773,45 @@ Here is a trustless swap sending fungible tokens for a **non-fungible token** (b
 
 ## Human-readable display of amounts
 
-Displaying amounts like `25000000000000000` to the user is not a good idea.
+Amounts in native format, like `25000000000000000`, are difficult do understand.
+The user needs to know the number of decimals that the token contract uses.
 
-And as each ERC20 contract may use a different value for decimals, we cannot
-use a fixed value for it.
+There is an alternative way to display these amounts:
 
-For this reason
-the `let` command when used with an additional argument (a contract address)
-is able to retrieve the number of decimals from an ERC20 contract by calling its `decimals()` function
-then it converts the supplied amount in decimal format to an integer
+We can use the `let` command to convert an amount in **decimal format** to its corresponding integer format
 
-this command:
+The `let` command when used with an additional argument (a token contract address)
+is able to retrieve the number of decimals from the ERC20 contract by calling its `decimals()` function
+and then it converts the supplied amount in decimal format to an integer
+
+Example:
 
 ```javascript
-["let","amount","12.5","0xb015a47f8e5511076c9d0372bf190ac"]
+["let","amount","12.5","0x6b175474e89094c44da98b954eedeac495271d0f"]
 ```
 
-will store the value `125000000000000000` on the variable with name `amount`
-
+The command above will store the value `12500000000000000000` on the variable with name `amount`
 
 So instead of using a call with the supplied amount like this:
 
 ```javascript
-["call","<token>","transfer(address,uint256)","<recipient>","25000000000000000"],
+["call","<token>","transfer(address,uint256)","<recipient>","2500000000000000000"],
 ```
 
 We use the amount in decimal format in the `let` command and use the variable in the call:
 
 ```javascript
-["let","amount","2.5","0xb015a47f8e5511076c9d0372bf190ac"]
-["call","0xb015a47f8e5511076c9d0372bf190ac","transfer(address,uint256)","<recipient>","%amount%"],
+["let","amount","2.5","0x6b175474e89094c44da98b954eedeac495271d0f"]
+["call","0x6b175474e89094c44da98b954eedeac495271d0f","transfer(address,uint256)","<recipient>","%amount%"],
 ```
 
-Optionally, we can use another variable to store the contract address as is used twice:
+Optionally, we can also use another variable to store the contract address as it is used twice:
 
 ```javascript
-["let","token","0xb015a47f8e5511076c9d0372bf190ac"]
-["let","amount","2.5","%token%"]
-["call","%token%","transfer(address,uint256)","<recipient>","%amount%"],
+["let","DAI","0x6b175474e89094c44da98b954eedeac495271d0f"]
+["let","amount","2.5","%DAI%"]
+["call","%DAI%","transfer(address,uint256)","<recipient>","%amount%"],
 ```
-
 
 
 ## Display on hardware wallets
@@ -829,6 +828,8 @@ Composable Transactions
 can be reviewed on these devices (as well as on other off-line and on-line wallets)
 so the user can reject them if the content in unexpected.
 
+No more blind signing!
+
 By default, each operation from a script is displayed on the device in sequential order, with its parameters.
 
 And each call is displayed with the function signature and arguments, making clear what is being called on the contract.
@@ -836,8 +837,7 @@ And each call is displayed with the function signature and arguments, making cle
 
 ## Templates
 
-Even though displaying the script is better than blind signing, 
-
+Even though displaying the script is better than blind signing,
 it can still be a lengthy process with many screens to review
 and most users will not be able to understand the process
 
@@ -867,7 +867,11 @@ A composable transaction containing this script:
 
 Would be displayed using dozens of screens on a hardware wallet, and on normal wallets it would be displayed as is. Hard to understand by many people.
 
-It turns out that the above script implements a **trustless swap** of fungible tokens, so it could be displayed in a few screens like this:
+It turns out that the above script
+implements a **trustless swap** of fungible tokens,
+and being of common use it
+can be turned into a template.
+So it could be displayed in a few screens like this:
 
 ```
 -----------------
