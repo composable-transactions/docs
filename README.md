@@ -285,7 +285,7 @@ To support a variety of use cases, composable transactions contain many differen
 <summary>call</summary><blockquote>
 
 ```javascript
-["call",address,function,args...]
+["call",address,function_sig,args...]
 ```
 
 Calls a function on a smart contract
@@ -293,8 +293,8 @@ Calls a function on a smart contract
 Examples:
 
 ```javascript
-["call","%contract%","transfer","%to%","10.5"]
-["call","Ammlaklkfld","transfer","Amafpoajf","10.5"]
+["call","%contract%","transfer(address,uint256)","%to%","%amount%"]
+["call","0x6b175474e89094c44da98b954eedeac495271d0f","transfer(address,uint256)","0xb015a47f8e5511076c9d0372bf190ac872d0f257",12500000000000000000n]
 ```
 
 If the call fails, the entire transaction is reverted
@@ -304,7 +304,7 @@ If the call fails, the entire transaction is reverted
 <summary>call-send</summary><blockquote>
 
 ```javascript
-["call-send",amount,address,function,args...]
+["call-send",amount,address,function_sig,args...]
 ```
 
 Calls a function on a smart contract, also sending an amount of native tokens
@@ -322,7 +322,7 @@ If the call fails, the entire transaction is reverted
 <summary>pcall</summary><blockquote>
 
 ```javascript
-["pcall",address,function,args...]
+["pcall",address,function_sig,args...]
 ```
 
 Makes a protected call to a function on a smart contract.
@@ -339,10 +339,9 @@ Examples:
 ["pcall","%contract%","transfer","%to%","10.5"]
 ["store","result"]
 ["get","%result%",1]
-["if","%last_result%","=",true]
+["stop if","%last_result%","=",true]
 ["get","%result%",2]
 ...
-["end"]
 ```
 </blockquote></details>
 
@@ -350,7 +349,7 @@ Examples:
 <summary>pcall-send</summary><blockquote>
 
 ```javascript
-["pcall-send",amount,address,function,args...]
+["pcall-send",amount,address,function_sig,args...]
 ```
 
 Makes a protected call to a function on a smart contract,
@@ -368,10 +367,9 @@ Examples:
 ["pcall-send","1.5 eth","%contract%","do_something","%arg%"]
 ["store","result"]
 ["get","%result%",1]
-["if","%last_result%","=",true]
+["stop if","%last_result%","=",false]
 ["get","%result%",2]
 ...
-["end"]
 ```
 </blockquote></details>
 
@@ -414,19 +412,26 @@ Transfer an amount of native tokens to the informed address
 
 Assign the value to the variable
 
-The value can be a number, bignumber, string, boolean, list or object
-
-It is also possible to convert an amount in decimal format to bignumber,
-by supplying the address of the token.
-
-**:warning:** The decimal format must **always** contain a `.`
+The value can be an integer (uint256 or int256), address, string, boolean or tuple
 
 Here are some examples:
 
 ```javascript
+["let","text","hello world!"]
+["let","DAI","0x6b175474e89094c44da98b954eedeac495271d0f"]
+["let","min_amount",12500000000000000000n]
+["let","data",["bigdeal.eth",2500000000000000000n,true]]
+```
+
+It is also possible to convert an amount in decimal format to its integer counterpart,
+by supplying the address of the token as the third argument
+
+**:warning:** The decimal format must **always** contain a `.`
+
+```javascript
 ["let","min_amount","0.05","%token2%"]
-["let","min_amount","1.5","%token2%"]
-["let","min_amount","100.","Am..."]
+["let","min_amount","1.5","%DAI%"]
+["let","min_amount","100.","0x6b175474e89094c44da98b954eedeac495271d0f"]
 ```
 </blockquote></details>
 
@@ -453,21 +458,31 @@ Example:
 <summary>get</summary><blockquote>
 
 ```javascript
-["get",table,key_or_pos]
+["get","<source_variable>",<position_on_tuple>,"<data_type>","<destination_variable_name>"]
 ```
 
-Retrieve an element from a table (list or object)
+Retrieve an element from a tuple or structure and store it on another variable
 
-For lists we inform the position:
+The position uses base 1
+
+The supported data types are:
+
+* uint256
+* int256
+* bool
+* address
+* string
+* bytes
+
+This example extracts 2 values from the returned tuple `(bool,uint256)`:
 
 ```javascript
-["get","%list%",3]
-```
-
-For dictionaries we inform the key in string format:
-
-```javascript
-["get","%result%","price"]
+[
+  ["call","<address 1>","<function 1>","arg1","arg2"],
+  ["get","%last_result%",1,"bool","success"],
+  ["get","%last_result%",2,"uint256","amount"],
+  ["assert","%success%","=",true,"and","%amount%",">=",25000000000000000n]
+]
 ```
 </blockquote></details>
 
@@ -485,7 +500,7 @@ Adds 2 values and return the result
 
 The values must be of the same type
 
-They can be number or bignumber
+They can be uint256 or int256
 </blockquote></details>
 
 <details>
@@ -499,7 +514,7 @@ Subtract one value from the other and return the result
 
 The values must be of the same type
 
-They can be number or bignumber
+They can be uint256 or int256
 </blockquote></details>
 
 <details>
@@ -513,7 +528,7 @@ Multiplies 2 values and return the result
 
 The values must be of the same type
 
-They can be number or bignumber
+They can be uint256 or int256
 </blockquote></details>
 
 <details>
@@ -527,7 +542,7 @@ Divides the first value by the second and returns the result
 
 The values must be of the same type
 
-They can be number or bignumber
+They can be uint256 or int256
 </blockquote></details>
 
 <details>
@@ -541,21 +556,21 @@ Returns the modulo of the division of the first value by the second
 
 The values must be of the same type
 
-They can be number or bignumber
+They can be uint256 or int256
 </blockquote></details>
 
 <details>
 <summary>pow</summary><blockquote>
 
 ```javascript
-["pow",value1,value2]
+["pow",base,exponent]
 ```
 
-Elevates the first value by the power of the second and returns the result
+Elevates the base to the power of the exponent and returns the result
 
-The values must be of the same type
+The base can be uint256 or int256
 
-They can be number or bignumber
+The exponent must be uint256
 </blockquote></details>
 
 
@@ -602,7 +617,7 @@ Examples:
 ```javascript
 ["assert","%variable_name%",">",10]
 ["assert","%var1%","<=","%var2%"]
-["assert","%var1%","<","%var2%","and","%var1%",">=",1500]
+["assert","%var1%","<","%var2%","and","%var1%",">=",150000000000000000n]
 ["assert","%var1%","=","text1","or","%var1%","=","text2","or","%var1%","=","text3"]
 ```
 
@@ -615,68 +630,30 @@ The logic operators: `and` `or`
 ### conditional stop
 
 <details>
-<summary>if</summary><blockquote>
+<summary>stop if</summary><blockquote>
 
 ```javascript
-["if",<expression>]
+["stop if",<expression>]
 ```
+
+Stop execution of the script if the expression evaluates to `true`
+
+In this case the remaining commands will not be executed
+
+Continues execution of the script if the expression evaluates to `false`
 
 Example expressions:
 
 ```javascript
-["if","%variable_name%",">",10]
-["if","%var1%","<=","%var2%"]
-["if","%var1%","<","%var2%","and","%var1%",">=",1500]
-["if","%var1%","=","text1","or","%var1%","=","text2","or","%var1%","=","text3"]
+["stop if","%variable_name%",">",10]
+["stop if","%var1%","<=","%var2%"]
+["stop if","%var1%","<","%var2%","and","%var1%",">=",1500]
+["stop if","%var1%","=","text1","or","%var1%","=","text2","or","%var1%","=","text3"]
 ```
 
 The operators can be: `=` `!=` `>` `>=` `<` `<=` `match`
 
 The logic operators: `and` `or`
-
-Example:
-
-```javascript
-["if","%amount%",">",20],
-...
-["end"]
-```
-
-**:warning: Important:** `if` statements can **NOT** be nested!
-</blockquote></details>
-
-
-<details>
-<summary>break</summary><blockquote>
-
-```javascript
-["break"]
-["break","if",<expression>]
-```
-
-Used to exit from a loop
-
-Example:
-
-```javascript
-["foreach","item","%list%"],
-...
-["break","if",...],
-...
-["loop"]
-```
-
-Or if already using an if statement:
-
-```javascript
-["foreach","item","%list%"],
-...
-["if",...],
-["break"],
-["end"],
-...
-["loop"]
-```
 </blockquote></details>
 
 
